@@ -15,3 +15,4 @@ if __name__ == "__main__":
         save_to_json(safe_tokens)
     else:
         print("⛔ هیچ توکن امنی برای ذخیره‌سازی پیدا نشد.")
+
