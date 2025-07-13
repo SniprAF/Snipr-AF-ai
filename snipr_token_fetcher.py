@@ -8,4 +8,5 @@ data = response.json()
 for i, token in enumerate(data["pairs"][:10]):
     print(f"{i+1}. {token['baseToken']['name']} ({token['baseToken']['symbol']}) - Price: {token['priceUsd']}")
 
+
 added initial token fetcher
