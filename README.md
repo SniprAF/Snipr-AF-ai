@@ -26,33 +26,3 @@ Each new token is evaluated with criteria like:
 
 ```bash
 python snipr_token_fetcher.py
-Optional parameters:
---min-liquidity: minimum liquidity filter
-
---min-holders: minimum holder count
-
---save: save output to local JSON file
-
-📁 Files
-snipr_token_fetcher.py: main scanning script
-
-save_safe_tokens.py: for saving filtered tokens
-
-README.md: project info and usage guide
-
-🔐 Disclaimer
-This tool is for educational and research purposes only. Use at your own risk. Always do your own research (DYOR) before investing in new tokens.
-
-yaml
-Copy
-Edit
-
----
-
-✅ الان این نسخه رو توی فایل `README.md` بذار و ذخیره کن  
-✅ بعد با دستور زیر پوش بده:
-
-```bash
-git add README.md
-git commit -m "Fix README formatting and structure"
-git push
