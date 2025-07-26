@@ -1,56 +1,43 @@
 import asyncio
 import aiohttp
 import json
-import os
 
-COINGECKO_LIST_URL = "https://api.coingecko.com/api/v3/coins/list"
-COINGECKO_COIN_URL = "https://api.coingecko.com/api/v3/coins/{}"
-SAFE_TOKENS_FILE = "safe_tokens.json"
-MAX_TOKENS = 30  # فقط 30 توکن اول بررسی می‌شود برای تست سریع
+COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/{}"
+TOKEN_LIST = [
+    "0xlsd", "0xgasless-2", "0xnumber", "1000btt", "0xsim-by-virtuals",
+    "1000bonk", "0dog", "000-capital", "1000cat", "1000x-by-virtuals",
+    "0-knowledge-network", "0xscans", "0x0-ai-ai-smart-contract", "0x",
+    "1000rats", "0x678-landwolf-1933", "0xgen", "0x-leverage", "0xprivacy",
+    "1000shib", "1000chems"
+]
 
-async def fetch_coin_detail(session, coin_id):
+async def fetch_token_data(session, token_id):
+    url = COINGECKO_URL.format(token_id)
     try:
-        async with session.get(COINGECKO_COIN_URL.format(coin_id)) as response:
+        async with session.get(url) as response:
             if response.status == 200:
                 data = await response.json()
-                platforms = data.get("platforms", {})
-                if "solana" in platforms and platforms["solana"]:
-                    print(f"✅ توکن امن سولانا: {coin_id}")
-                    return {
-                        "id": data["id"],
-                        "symbol": data["symbol"],
-                        "name": data["name"],
-                        "platform": "solana",
-                        "address": platforms["solana"]
-                    }
+                if data.get("market_data", {}).get("market_cap", {}).get("usd", 0) > 100000:
+                    print(f"✅ توکن امن سولانا: {token_id}")
+                    return token_id
             else:
-                print(f"⚠️ خطا در دریافت {coin_id}: {response.status}")
+                print(f"⚠️ خطا در دریافت {token_id}: {response.status}")
     except Exception as e:
-        print(f"⚠️ خطا در پردازش {coin_id}: {e}")
+        print(f"⚠️ خطای ناشناخته در {token_id}: {e}")
     return None
 
-async def get_safe_solana_tokens():
+async def main():
     print("در حال گرفتن توکن‌های سولانا از کوین‌گکو...")
-
+    safe_tokens = []
     async with aiohttp.ClientSession() as session:
-        async with session.get(COINGECKO_LIST_URL) as response:
-            if response.status != 200:
-                print(f"❌ خطا در گرفتن لیست کوین‌ها: {response.status}")
-                return []
-            coins = await response.json()
-
-        tasks = []
-        for coin in coins[:MAX_TOKENS]:
-            tasks.append(fetch_coin_detail(session, coin["id"]))
-
-        results = await asyncio.gather(*tasks)
-        return [token for token in results if token is not None]
-
-def save_safe_tokens(tokens):
-    with open(SAFE_TOKENS_FILE, "w", encoding="utf-8") as f:
-        json.dump(tokens, f, ensure_ascii=False, indent=2)
-    print(f"✅ تعداد توکن‌های امن ذخیره‌شده: {len(tokens)}")
+        for token_id in TOKEN_LIST:
+            result = await fetch_token_data(session, token_id)
+            if result:
+                safe_tokens.append(result)
+            await asyncio.sleep(1.2)  # ← اضافه شدن delay برای جلوگیری از 429
+    with open("safe_tokens.json", "w", encoding="utf-8") as f:
+        json.dump(safe_tokens, f, indent=4, ensure_ascii=False)
+    print(f"✅ تعداد توکن‌های امن ذخیره‌شده: {len(safe_tokens)}")
 
 if __name__ == "__main__":
-    safe_tokens = asyncio.run(get_safe_solana_tokens())
-    save_safe_tokens(safe_tokens)
+    asyncio.run(main())
