@@ -1,77 +1,43 @@
-import json
 import requests
-import time
 
-# بارگذاری توکن‌ها از فایل تست
-def fetch_mock_tokens():
-    with open("sample_tokens.json", "r", encoding="utf-8") as f:
-        tokens = json.load(f)
-    print(f"📁 تعداد توکن‌های تستی بارگذاری‌شده: {len(tokens)}")
-    return tokens
-
-# بررسی امنیت توکن با GoPlus API
 def check_token_security(token_address):
-    url = f"https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses={token_address}"
+    """
+    بررسی امنیت یک توکن سولانا با استفاده از API GoPlusLabs.
+    ورودی: آدرس قرارداد توکن سولانا (رشته)
+    خروجی: دیکشنری داده امنیتی یا دیکشنری خالی اگر داده نبود یا خطا بود.
+    """
+    url = f"https://api.gopluslabs.io/api/v1/token_security/solana?contract_addresses={token_address}"
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             data = response.json()
-            return data['result'].get(token_address, {})
+            print(f"DEBUG - داده دریافتی از GoPlus برای {token_address}: {data}")
+            if data and "result" in data and isinstance(data["result"], dict) and token_address in data["result"]:
+                return data["result"][token_address]
+            else:
+                print(f"⚠️ داده‌ای برای آدرس {token_address} در پاسخ GoPlus یافت نشد یا نتیجه نامعتبر است.")
+                return {}
         else:
+            print(f"❌ خطا در دریافت داده از GoPlus: کد وضعیت {response.status_code}")
             return {}
     except Exception as e:
-        print(f"⛔ خطا در اتصال به GoPlus: {e}")
+        print(f"❌ استثناء در ارتباط با GoPlus: {e}")
         return {}
 
-# فیلتر کردن توکن‌های امن
-def apply_goplus_filter(tokens):
-    final = []
-    for token in tokens:
-        base_token = token.get("baseToken", {})
-        address = base_token.get("address")
-        name = base_token.get("name")
-        symbol = base_token.get("symbol")
-        price = token.get("priceUsd")
+def main():
+    # لیست توکن‌های سولانا برای تست - می‌تونی این لیست رو گسترش بدی
+    tokens_to_test = [
+        "4k3Dyjzvzp8eM7zF3EWh2sSx7wH8dGeVPt2A58xdk6R9",  # مثال توکن SOL (رپد سولانا)
+        # توکن‌های بیشتر اینجا اضافه کن
+    ]
 
-        if not address:
-            continue
-
-        print(f"🔍 بررسی {name} ({symbol}) ...")
-        info = check_token_security(address)
-        time.sleep(0.5)  # جلوگیری از بلاک شدن API
-
-        try:
-            if (
-                info.get("is_open_source") == "1" and
-                info.get("is_proxy") == "0" and
-                info.get("can_take_back_ownership") == "0" and
-                info.get("is_mintable") == "0" and
-                info.get("is_blacklisted") == "0" and
-                info.get("is_honeypot") == "0"
-            ):
-                final.append({
-                    "name": name,
-                    "symbol": symbol,
-                    "address": address,
-                    "price": price,
-                    "security": info
-                })
-        except Exception as e:
-            print(f"⛔ خطا در پردازش فیلتر: {e}")
-            continue
-
-    print(f"\n🔐 تعداد توکن‌های امن: {len(final)}")
-    return final
-
-# ذخیره توکن‌ها در فایل JSON
-def save_tokens(tokens, filename="secure_tokens_goplus.json"):
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(tokens, f, ensure_ascii=False, indent=2)
-    print(f"✅ ذخیره شد در فایل: {filename}")
+    for token in tokens_to_test:
+        print(f"\n=== بررسی توکن: {token} ===")
+        security_info = check_token_security(token)
+        if security_info:
+            print(f"✅ اطلاعات امنیتی توکن {token}: {security_info}")
+        else:
+            print(f"⚠️ اطلاعات امنیتی برای توکن {token} موجود نیست.")
 
 if __name__ == "__main__":
-    tokens = fetch_mock_tokens()
-    safe_tokens = apply_goplus_filter(tokens)
-    save_tokens(safe_tokens)
-
-
+    main()
