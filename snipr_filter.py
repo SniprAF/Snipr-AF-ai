@@ -9,7 +9,7 @@ def fetch_mock_tokens():
     print(f"📁 تعداد توکن‌های تستی بارگذاری‌شده: {len(tokens)}")
     return tokens
 
-# بررسی امنیت در GoPlus
+# بررسی امنیت توکن با GoPlus API
 def check_token_security(token_address):
     url = f"https://api.gopluslabs.io/api/v1/token_security/1?contract_addresses={token_address}"
     try:
@@ -19,7 +19,8 @@ def check_token_security(token_address):
             return data['result'].get(token_address, {})
         else:
             return {}
-    except:
+    except Exception as e:
+        print(f"⛔ خطا در اتصال به GoPlus: {e}")
         return {}
 
 # فیلتر کردن توکن‌های امن
@@ -37,7 +38,7 @@ def apply_goplus_filter(tokens):
 
         print(f"🔍 بررسی {name} ({symbol}) ...")
         info = check_token_security(address)
-        time.sleep(0.5)
+        time.sleep(0.5)  # جلوگیری از بلاک شدن API
 
         try:
             if (
@@ -55,21 +56,22 @@ def apply_goplus_filter(tokens):
                     "price": price,
                     "security": info
                 })
-        except:
+        except Exception as e:
+            print(f"⛔ خطا در پردازش فیلتر: {e}")
             continue
 
-    print(f"\n🔐 توکن‌های امن تستی: {len(final)} عدد")
+    print(f"\n🔐 تعداد توکن‌های امن: {len(final)}")
     return final
 
-# ذخیره خروجی
+# ذخیره توکن‌ها در فایل JSON
 def save_tokens(tokens, filename="secure_tokens_goplus.json"):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(tokens, f, ensure_ascii=False, indent=2)
     print(f"✅ ذخیره شد در فایل: {filename}")
 
-# اجرای نهایی
 if __name__ == "__main__":
     tokens = fetch_mock_tokens()
-    safe = apply_goplus_filter(tokens)
-    save_tokens(safe)
+    safe_tokens = apply_goplus_filter(tokens)
+    save_tokens(safe_tokens)
+
 
